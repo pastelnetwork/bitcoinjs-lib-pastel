@@ -12,7 +12,7 @@ function fromBase58Check (address) {
   var multibyte = payload.length === 22
   var offset = multibyte ? 2 : 1
 
-  var version = multibyte ? payload.readUInt16BE(0) : payload[0]
+  var version = multibyte ? Buffer.from(payload).readUInt16BE(0) : payload[0]
   var hash = payload.slice(offset)
 
   return { hash: hash, version: version }
