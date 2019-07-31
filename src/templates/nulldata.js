@@ -6,22 +6,28 @@ var typeforce = require('typeforce')
 var OPS = require('bitcoin-ops')
 
 function check (script) {
-  return script.length === 2 &&
-     script[0] === OPS.OP_RETURN
+  var buffer = bscript.compile(script)
+
+  return buffer.length > 1 &&
+    buffer[0] === OPS.OP_RETURN
 }
 check.toJSON = function () { return 'null data output' }
 
 function encode (data) {
-  typeforce(types.Buffer, data)
+  // Allow arrays types since decompile returns an array too
+  typeforce(typeforce.oneOf(types.Buffer, types.Array), data)
 
-  return bscript.compile([OPS.OP_RETURN, data])
+  return bscript.compile([OPS.OP_RETURN].concat(data))
 }
 
 function decode (buffer) {
-  var script = bscript.decompile(buffer)
-  typeforce(check, script)
+  typeforce(check, buffer)
 
-  return script[1]
+  var chunks = bscript.decompile(buffer)
+
+  chunks.shift()
+
+  return chunks.length === 1 ? chunks[0] : chunks
 }
 
 module.exports = {

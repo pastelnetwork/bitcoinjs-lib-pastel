@@ -1,3 +1,4 @@
+var Buffer = require('safe-buffer').Buffer
 var bip66 = require('bip66')
 var pushdata = require('pushdata-bitcoin')
 var typeforce = require('typeforce')
@@ -23,6 +24,13 @@ function isPushOnly (value) {
   return types.Array(value) && value.every(isPushOnlyChunk)
 }
 
+function asMinimalOP (buffer) {
+  if (buffer.length === 0) return OPS.OP_0
+  if (buffer.length !== 1) return
+  if (buffer[0] >= 1 && buffer[0] <= 16) return OP_INT_BASE + buffer[0]
+  if (buffer[0] === 0x81) return OPS.OP_1NEGATE
+}
+
 function compile (chunks) {
   // TODO: remove me
   if (Buffer.isBuffer(chunks)) return chunks
@@ -33,7 +41,7 @@ function compile (chunks) {
     // data chunk
     if (Buffer.isBuffer(chunk)) {
       // adhere to BIP62.3, minimal push policy
-      if (chunk.length === 1 && (chunk[0] === 0x81 || (chunk[0] >= 1 && chunk[0] <= 16))) {
+      if (chunk.length === 1 && asMinimalOP(chunk) !== undefined) {
         return accum + 1
       }
 
@@ -44,28 +52,21 @@ function compile (chunks) {
     return accum + 1
   }, 0.0)
 
-  var buffer = new Buffer(bufferSize)
+  var buffer = Buffer.allocUnsafe(bufferSize)
   var offset = 0
 
   chunks.forEach(function (chunk) {
     // data chunk
     if (Buffer.isBuffer(chunk)) {
       // adhere to BIP62.3, minimal push policy
-      if (chunk.length === 1 && chunk[0] >= 1 && chunk[0] <= 16) {
-        var opcode = OP_INT_BASE + chunk[0]
+      var opcode = asMinimalOP(chunk)
+      if (opcode !== undefined) {
         buffer.writeUInt8(opcode, offset)
         offset += 1
         return
       }
 
-      if (chunk.length === 1 && chunk[0] === 0x81) {
-        buffer.writeUInt8(OPS.OP_1NEGATE, offset)
-        offset += 1
-        return
-      }
-
       offset += pushdata.encode(buffer, chunk.length, offset)
-
       chunk.copy(buffer, offset)
       offset += chunk.length
 
@@ -106,7 +107,13 @@ function decompile (buffer) {
       var data = buffer.slice(i, i + d.number)
       i += d.number
 
-      chunks.push(data)
+      // decompile minimally
+      var op = asMinimalOP(data)
+      if (op !== undefined) {
+        chunks.push(op)
+      } else {
+        chunks.push(data)
+      }
 
     // opcode
     } else {
@@ -126,7 +133,11 @@ function toASM (chunks) {
 
   return chunks.map(function (chunk) {
     // data?
-    if (Buffer.isBuffer(chunk)) return chunk.toString('hex')
+    if (Buffer.isBuffer(chunk)) {
+      var op = asMinimalOP(chunk)
+      if (op === undefined) return chunk.toString('hex')
+      chunk = op
+    }
 
     // opcode!
     return REVERSE_OPS[chunk]
@@ -142,7 +153,7 @@ function fromASM (asm) {
     typeforce(types.Hex, chunkStr)
 
     // data!
-    return new Buffer(chunkStr, 'hex')
+    return Buffer.from(chunkStr, 'hex')
   }))
 }
 
@@ -152,7 +163,7 @@ function toStack (chunks) {
 
   return chunks.map(function (op) {
     if (Buffer.isBuffer(op)) return op
-    if (op === OPS.OP_0) return new Buffer(0)
+    if (op === OPS.OP_0) return Buffer.allocUnsafe(0)
 
     return scriptNumber.encode(op - OP_INT_BASE)
   })
@@ -174,7 +185,7 @@ function isCanonicalPubKey (buffer) {
 }
 
 function isDefinedHashType (hashType) {
-  var hashTypeMod = hashType & ~0x80
+  var hashTypeMod = hashType & ~0xc0
 
 // return hashTypeMod > SIGHASH_ALL && hashTypeMod < SIGHASH_SINGLE
   return hashTypeMod > 0x00 && hashTypeMod < 0x04
@@ -200,9 +211,4 @@ module.exports = {
   isCanonicalSignature: isCanonicalSignature,
   isPushOnly: isPushOnly,
   isDefinedHashType: isDefinedHashType
-}
-
-var templates = require('./templates')
-for (var key in templates) {
-  module.exports[key] = templates[key]
 }

@@ -12,22 +12,28 @@ function ECSignature (r, s) {
 }
 
 ECSignature.parseCompact = function (buffer) {
-  if (buffer.length !== 65) throw new Error('Invalid signature length')
+  typeforce(types.BufferN(65), buffer)
 
   var flagByte = buffer.readUInt8(0) - 27
   if (flagByte !== (flagByte & 7)) throw new Error('Invalid signature parameter')
 
   var compressed = !!(flagByte & 4)
   var recoveryParam = flagByte & 3
-
-  var r = BigInteger.fromBuffer(buffer.slice(1, 33))
-  var s = BigInteger.fromBuffer(buffer.slice(33))
+  var signature = ECSignature.fromRSBuffer(buffer.slice(1))
 
   return {
     compressed: compressed,
     i: recoveryParam,
-    signature: new ECSignature(r, s)
+    signature: signature
   }
+}
+
+ECSignature.fromRSBuffer = function (buffer) {
+  typeforce(types.BufferN(64), buffer)
+
+  var r = BigInteger.fromBuffer(buffer.slice(0, 32))
+  var s = BigInteger.fromBuffer(buffer.slice(32, 64))
+  return new ECSignature(r, s)
 }
 
 ECSignature.fromDER = function (buffer) {
@@ -41,7 +47,7 @@ ECSignature.fromDER = function (buffer) {
 // BIP62: 1 byte hashType flag (only 0x01, 0x02, 0x03, 0x81, 0x82 and 0x83 are allowed)
 ECSignature.parseScriptSignature = function (buffer) {
   var hashType = buffer.readUInt8(buffer.length - 1)
-  var hashTypeMod = hashType & ~0x80
+  var hashTypeMod = hashType & ~0xc0
 
   if (hashTypeMod <= 0x00 || hashTypeMod >= 0x04) throw new Error('Invalid hashType ' + hashType)
 
@@ -58,27 +64,31 @@ ECSignature.prototype.toCompact = function (i, compressed) {
 
   i += 27
 
-  var buffer = new Buffer(65)
+  var buffer = Buffer.alloc(65)
   buffer.writeUInt8(i, 0)
-
-  this.r.toBuffer(32).copy(buffer, 1)
-  this.s.toBuffer(32).copy(buffer, 33)
-
+  this.toRSBuffer(buffer, 1)
   return buffer
 }
 
 ECSignature.prototype.toDER = function () {
-  var r = new Buffer(this.r.toDERInteger())
-  var s = new Buffer(this.s.toDERInteger())
+  var r = Buffer.from(this.r.toDERInteger())
+  var s = Buffer.from(this.s.toDERInteger())
 
   return bip66.encode(r, s)
 }
 
+ECSignature.prototype.toRSBuffer = function (buffer, offset) {
+  buffer = buffer || Buffer.alloc(64)
+  this.r.toBuffer(32).copy(buffer, offset)
+  this.s.toBuffer(32).copy(buffer, offset + 32)
+  return buffer
+}
+
 ECSignature.prototype.toScriptSignature = function (hashType) {
-  var hashTypeMod = hashType & ~0x80
+  var hashTypeMod = hashType & ~0xc0
   if (hashTypeMod <= 0 || hashTypeMod >= 4) throw new Error('Invalid hashType ' + hashType)
 
-  var hashTypeBuffer = new Buffer(1)
+  var hashTypeBuffer = Buffer.alloc(1)
   hashTypeBuffer.writeUInt8(hashType, 0)
 
   return Buffer.concat([this.toDER(), hashTypeBuffer])

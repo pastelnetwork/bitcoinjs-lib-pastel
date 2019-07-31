@@ -36,8 +36,7 @@ describe('HDNode', function () {
       var d = BigInteger.ONE
 
       keyPair = new ECPair(d, null)
-      chainCode = new Buffer(32)
-      chainCode.fill(1)
+      chainCode = Buffer.alloc(32, 1)
     })
 
     it('stores the keyPair/chainCode directly', function () {
@@ -64,7 +63,7 @@ describe('HDNode', function () {
 
     it('throws when an invalid length chain code is given', function () {
       assert.throws(function () {
-        new HDNode(keyPair, new Buffer(20))
+        new HDNode(keyPair, Buffer.alloc(20))
       }, /Expected property "1" of type Buffer\(Length: 32\), got Buffer\(Length: 20\)/)
     })
   })
@@ -116,9 +115,9 @@ describe('HDNode', function () {
 
     beforeEach(function () {
       keyPair = ECPair.makeRandom()
-      hash = new Buffer(32)
+      hash = Buffer.alloc(32)
 
-      var chainCode = new Buffer(32)
+      var chainCode = Buffer.alloc(32)
       hd = new HDNode(keyPair, chainCode)
     })
 
@@ -298,7 +297,7 @@ describe('HDNode', function () {
       })
 
       // FIXME: test data is only testing Private -> private for now
-      f.children.forEach(function (c, i) {
+      f.children.forEach(function (c) {
         if (c.m === undefined) return
 
         it(c.path + ' from ' + f.master.fingerprint, function () {

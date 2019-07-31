@@ -1,6 +1,8 @@
 // OP_0 [signatures ...]
 
+var Buffer = require('safe-buffer').Buffer
 var bscript = require('../../script')
+var p2mso = require('./output')
 var typeforce = require('typeforce')
 var OPS = require('bitcoin-ops')
 
@@ -21,11 +23,13 @@ function check (script, allowIncomplete) {
 }
 check.toJSON = function () { return 'multisig input' }
 
+var EMPTY_BUFFER = Buffer.allocUnsafe(0)
+
 function encodeStack (signatures, scriptPubKey) {
   typeforce([partialSignature], signatures)
 
   if (scriptPubKey) {
-    var scriptData = bscript.multisig.output.decode(scriptPubKey)
+    var scriptData = p2mso.decode(scriptPubKey)
 
     if (signatures.length < scriptData.m) {
       throw new TypeError('Not enough signatures provided')
@@ -36,7 +40,12 @@ function encodeStack (signatures, scriptPubKey) {
     }
   }
 
-  return [].concat(new Buffer(0), signatures)
+  return [].concat(EMPTY_BUFFER, signatures.map(function (sig) {
+    if (sig === OPS.OP_0) {
+      return EMPTY_BUFFER
+    }
+    return sig
+  }))
 }
 
 function encode (signatures, scriptPubKey) {

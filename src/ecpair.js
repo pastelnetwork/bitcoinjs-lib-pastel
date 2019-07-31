@@ -57,23 +57,24 @@ ECPair.fromPublicKeyBuffer = function (buffer, network) {
   })
 }
 
-ECPair.fromWIF = function (string, network, skipNetworkCheck) {
+ECPair.fromWIF = function (string, network) {
   var decoded = wif.decode(string)
   var version = decoded.version
 
-  // [network, ...]
+  // list of networks?
   if (types.Array(network)) {
-    network = network.filter(function (network) {
-      return version === network.wif
-    }).pop()
+    network = network.filter(function (x) {
+      return version === x.wif
+    }).pop()  // We should not use pop since it depends on the order of the networks for the same wif
 
     if (!network) throw new Error('Unknown network version')
 
-  // network
+  // otherwise, assume a network object (or default to vrsc style network)
   } else {
-    network = network || NETWORKS.bitcoin
-
-    if (!skipNetworkCheck && version !== network.wif) throw new Error('Invalid network version')
+    network = network || NETWORKS.default
+    console.log('Network WIF: ' + network.wif + ', Version: ' + version)
+    //if (version !== network.wif) throw new Error('Invalid network version')
+    if (version !== network.wif) console.log('Warning: current network version does not match wif key version')
   }
 
   var d = BigInteger.fromBuffer(decoded.privateKey)
@@ -110,6 +111,24 @@ ECPair.prototype.getNetwork = function () {
 
 ECPair.prototype.getPublicKeyBuffer = function () {
   return this.Q.getEncoded(this.compressed)
+}
+
+/**
+ * Get the private key as a 32 bytes buffer. If it is smaller than 32 bytes, pad it with zeros
+ * @return Buffer
+ */
+ECPair.prototype.getPrivateKeyBuffer = function () {
+  if (!this.d) throw new Error('Missing private key')
+
+  var bigIntBuffer = this.d.toBuffer()
+  if (bigIntBuffer.length > 32) throw new Error('Private key size exceeds 32 bytes')
+
+  if (bigIntBuffer.length === 32) {
+    return bigIntBuffer
+  }
+  var newBuffer = Buffer.alloc(32)
+  bigIntBuffer.copy(newBuffer, newBuffer.length - bigIntBuffer.length, 0, bigIntBuffer.length)
+  return newBuffer
 }
 
 ECPair.prototype.sign = function (hash) {
