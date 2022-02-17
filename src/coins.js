@@ -7,6 +7,7 @@ const coins = {
   BTG: 'btg',
   LTC: 'ltc',
   ZEC: 'zec',
+  PSL: 'psl',
   VRSC: 'vrsc',
   VERUSTEST: 'verustest',
   DASH: 'dash',
@@ -14,6 +15,10 @@ const coins = {
   KMD: 'kmd',
   DOGE: 'doge',
   DGB: 'dgb'
+}
+
+coins.isPastel = function (network) {
+  return typeforce.value(coins.PSL)(network.coin)
 }
 
 coins.isBitcoin = function (network) {

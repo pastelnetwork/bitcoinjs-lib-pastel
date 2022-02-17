@@ -10,9 +10,9 @@ module.exports = {
       public: 0x0488b21e,
       private: 0x0488ade4
     },
-    pubKeyHash: 0x3c,
-    scriptHash: 0x55,
-    wif: 0xBC,
+    pubKeyHash: 0x0ce3,
+    scriptHash: 0x1af6,
+    wif: 0x80,
     consensusBranchId: {
       1: 0x00,
       2: 0x00,
@@ -20,6 +20,25 @@ module.exports = {
       4: 0x76b809bb
     },
     coin: coins.DEFAULT,
+    isZcash: true
+  },
+  psl: {
+    messagePrefix: '\x18Pastel Signed Message:\n',
+    bech32: 'bc',
+    bip32: {
+      public: 0x0488b21e,
+      private: 0x0488ade4
+    },
+    pubKeyHash: 0x0ce3,
+    scriptHash: 0x1af6,
+    wif: 0x80,
+    consensusBranchId: {
+      1: 0x00,
+      2: 0x00,
+      3: 0x5ba81b19,
+      4: 0x76b809bb
+    },
+    coin: coins.PSL,
     isZcash: true
   },
   dash: {

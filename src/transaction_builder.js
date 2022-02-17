@@ -488,8 +488,8 @@ function buildInput (input, allowIncomplete) {
   }
 }
 
-// By default, assume is a Verus Coin style transaction
-function TransactionBuilder (network, maximumFeeRate) {
+// By default, assume is a Pastel Coin style transaction
+function TransactionBuilder (network, version = 1, maximumFeeRate) {
   this.prevTxMap = {}
   this.network = network || networks.default
 
@@ -498,6 +498,8 @@ function TransactionBuilder (network, maximumFeeRate) {
 
   this.inputs = []
   this.tx = new Transaction(this.network)
+
+  this.setVersion(version)
 }
 
 TransactionBuilder.prototype.setLockTime = function (locktime) {
