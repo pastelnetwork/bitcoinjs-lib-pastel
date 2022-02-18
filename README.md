@@ -13,6 +13,7 @@ Originally a fork of [bitcoinjs-lib](https://github.com/BitGo/bitcoinjs-lib); we
 - Bitcoin Gold
 - Zcash (Overwinter support in mainnet and Sapling in testnet)
 - Dash
+- *Pastel Network (PSL)* (see [example.js](https://github.com/pastelnetwork/bitcoinjs-lib-pastel/blob/zcash/example.js) for instructions on creating and signing a Pastel transaction)
 
 ## Features
 - Clean: Pure JavaScript, concise code, easy to read.
