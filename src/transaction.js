@@ -1,24 +1,24 @@
-var Buffer = require('safe-buffer').Buffer
-var BufferWriter = require('./bufferWriter')
-var bcrypto = require('./crypto')
-var bscript = require('./script')
-var bufferutils = require('./bufferutils')
-var coins = require('./coins')
-var opcodes = require('bitcoin-ops')
-var networks = require('./networks')
-var typeforce = require('typeforce')
-var types = require('./types')
-var varuint = require('varuint-bitcoin')
-var blake2b = require('blake2b')
+const Buffer = require('safe-buffer').Buffer
+const BufferWriter = require('./bufferWriter')
+const bcrypto = require('./crypto')
+const bscript = require('./script')
+const bufferutils = require('./bufferutils')
+const coins = require('./coins')
+const opcodes = require('bitcoin-ops')
+const networks = require('./networks')
+const typeforce = require('typeforce')
+const types = require('./types')
+const varuint = require('varuint-bitcoin')
+const blake2b = require('blake2b')
 
 function varSliceSize (someScript) {
-  var length = someScript.length
+  const length = someScript.length
 
   return varuint.encodingLength(length) + length
 }
 
 function vectorSize (someVector) {
-  var length = someVector.length
+  const length = someVector.length
 
   return varuint.encodingLength(length) + someVector.reduce(function (sum, witness) {
     return sum + varSliceSize(witness)
@@ -38,9 +38,9 @@ function Transaction (network = networks.default) {
     this.joinsplitPubkey = []
     this.joinsplitSig = []
     // ZCash version >= 3
-    this.overwintered = 0  // 1 if the transaction is post overwinter upgrade, 0 otherwise
-    this.versionGroupId = 0  // 0x03C48270 (63210096) for overwinter and 0x892F2085 (2301567109) for sapling
-    this.expiryHeight = 0  // Block height after which this transactions will expire, or 0 to disable expiry
+    this.overwintered = 0 // 1 if the transaction is post overwinter upgrade, 0 otherwise
+    this.versionGroupId = 0 // 0x03C48270 (63210096) for overwinter and 0x892F2085 (2301567109) for sapling
+    this.expiryHeight = 0 // Block height after which this transactions will expire, or 0 to disable expiry
     // ZCash version >= 4
     this.valueBalance = 0
     this.vShieldedSpend = []
@@ -58,13 +58,13 @@ Transaction.SIGHASH_BITCOINCASHBIP143 = 0x40
 Transaction.ADVANCED_TRANSACTION_MARKER = 0x00
 Transaction.ADVANCED_TRANSACTION_FLAG = 0x01
 
-var EMPTY_SCRIPT = Buffer.allocUnsafe(0)
-var EMPTY_WITNESS = []
-var ZERO = Buffer.from('0000000000000000000000000000000000000000000000000000000000000000', 'hex')
-var ONE = Buffer.from('0000000000000000000000000000000000000000000000000000000000000001', 'hex')
+const EMPTY_SCRIPT = Buffer.allocUnsafe(0)
+const EMPTY_WITNESS = []
+const ZERO = Buffer.from('0000000000000000000000000000000000000000000000000000000000000000', 'hex')
+const ONE = Buffer.from('0000000000000000000000000000000000000000000000000000000000000001', 'hex')
 // Used to represent the absence of a value
-var VALUE_UINT64_MAX = Buffer.from('ffffffffffffffff', 'hex')
-var BLANK_OUTPUT = {
+const VALUE_UINT64_MAX = Buffer.from('ffffffffffffffff', 'hex')
+const BLANK_OUTPUT = {
   script: EMPTY_SCRIPT,
   valueBuffer: VALUE_UINT64_MAX
 }
@@ -80,44 +80,44 @@ Transaction.ZCASH_G1_PREFIX_MASK = 0x02
 Transaction.ZCASH_G2_PREFIX_MASK = 0x0a
 
 Transaction.fromBuffer = function (buffer, network = networks.default, __noStrict) {
-  var offset = 0
+  let offset = 0
   function readSlice (n) {
     offset += n
     return buffer.slice(offset - n, offset)
   }
 
   function readUInt8 () {
-    var i = buffer.readUInt8(offset)
+    const i = buffer.readUInt8(offset)
     offset += 1
     return i
   }
 
   function readUInt32 () {
-    var i = buffer.readUInt32LE(offset)
+    const i = buffer.readUInt32LE(offset)
     offset += 4
     return i
   }
 
   function readInt32 () {
-    var i = buffer.readInt32LE(offset)
+    const i = buffer.readInt32LE(offset)
     offset += 4
     return i
   }
 
   function readInt64 () {
-    var i = bufferutils.readInt64LE(buffer, offset)
+    const i = bufferutils.readInt64LE(buffer, offset)
     offset += 8
     return i
   }
 
   function readUInt64 () {
-    var i = bufferutils.readUInt64LE(buffer, offset)
+    const i = bufferutils.readUInt64LE(buffer, offset)
     offset += 8
     return i
   }
 
   function readVarInt () {
-    var vi = varuint.decode(buffer, offset)
+    const vi = varuint.decode(buffer, offset)
     offset += varuint.decode.bytes
     return vi
   }
@@ -127,32 +127,32 @@ Transaction.fromBuffer = function (buffer, network = networks.default, __noStric
   }
 
   function readVector () {
-    var count = readVarInt()
-    var vector = []
-    for (var i = 0; i < count; i++) vector.push(readVarSlice())
+    const count = readVarInt()
+    const vector = []
+    for (let i = 0; i < count; i++) vector.push(readVarSlice())
     return vector
   }
 
   function readCompressedG1 () {
-    var yLsb = readUInt8() & 1
-    var x = readSlice(32)
+    const yLsb = readUInt8() & 1
+    const x = readSlice(32)
     return {
-      x: x,
-      yLsb: yLsb
+      x,
+      yLsb
     }
   }
 
   function readCompressedG2 () {
-    var yLsb = readUInt8() & 1
-    var x = readSlice(64)
+    const yLsb = readUInt8() & 1
+    const x = readSlice(64)
     return {
-      x: x,
-      yLsb: yLsb
+      x,
+      yLsb
     }
   }
 
   function readZKProof () {
-    var zkproof
+    let zkproof
     if (tx.isSaplingCompatible()) {
       zkproof = {
         sA: readSlice(48),
@@ -175,95 +175,95 @@ Transaction.fromBuffer = function (buffer, network = networks.default, __noStric
   }
 
   function readJoinSplit () {
-    var vpubOld = readUInt64()
-    var vpubNew = readUInt64()
-    var anchor = readSlice(32)
-    var nullifiers = []
+    const vpubOld = readUInt64()
+    const vpubNew = readUInt64()
+    const anchor = readSlice(32)
+    const nullifiers = []
     for (var j = 0; j < Transaction.ZCASH_NUM_JOINSPLITS_INPUTS; j++) {
       nullifiers.push(readSlice(32))
     }
-    var commitments = []
+    const commitments = []
     for (j = 0; j < Transaction.ZCASH_NUM_JOINSPLITS_OUTPUTS; j++) {
       commitments.push(readSlice(32))
     }
-    var ephemeralKey = readSlice(32)
-    var randomSeed = readSlice(32)
-    var macs = []
+    const ephemeralKey = readSlice(32)
+    const randomSeed = readSlice(32)
+    const macs = []
     for (j = 0; j < Transaction.ZCASH_NUM_JOINSPLITS_INPUTS; j++) {
       macs.push(readSlice(32))
     }
 
-    var zkproof = readZKProof()
-    var ciphertexts = []
+    const zkproof = readZKProof()
+    const ciphertexts = []
     for (j = 0; j < Transaction.ZCASH_NUM_JOINSPLITS_OUTPUTS; j++) {
       ciphertexts.push(readSlice(Transaction.ZCASH_NOTECIPHERTEXT_SIZE))
     }
     return {
-      vpubOld: vpubOld,
-      vpubNew: vpubNew,
-      anchor: anchor,
-      nullifiers: nullifiers,
-      commitments: commitments,
-      ephemeralKey: ephemeralKey,
-      randomSeed: randomSeed,
-      macs: macs,
-      zkproof: zkproof,
-      ciphertexts: ciphertexts
+      vpubOld,
+      vpubNew,
+      anchor,
+      nullifiers,
+      commitments,
+      ephemeralKey,
+      randomSeed,
+      macs,
+      zkproof,
+      ciphertexts
     }
   }
 
   function readShieldedSpend () {
-    var cv = readSlice(32)
-    var anchor = readSlice(32)
-    var nullifier = readSlice(32)
-    var rk = readSlice(32)
-    var zkproof = readZKProof()
-    var spendAuthSig = readSlice(64)
+    const cv = readSlice(32)
+    const anchor = readSlice(32)
+    const nullifier = readSlice(32)
+    const rk = readSlice(32)
+    const zkproof = readZKProof()
+    const spendAuthSig = readSlice(64)
     return {
-      cv: cv,
-      anchor: anchor,
-      nullifier: nullifier,
-      rk: rk,
-      zkproof: zkproof,
-      spendAuthSig: spendAuthSig
+      cv,
+      anchor,
+      nullifier,
+      rk,
+      zkproof,
+      spendAuthSig
     }
   }
 
   function readShieldedOutput () {
-    var cv = readSlice(32)
-    var cmu = readSlice(32)
-    var ephemeralKey = readSlice(32)
-    var encCiphertext = readSlice(580)
-    var outCiphertext = readSlice(80)
-    var zkproof = readZKProof()
+    const cv = readSlice(32)
+    const cmu = readSlice(32)
+    const ephemeralKey = readSlice(32)
+    const encCiphertext = readSlice(580)
+    const outCiphertext = readSlice(80)
+    const zkproof = readZKProof()
 
     return {
-      cv: cv,
-      cmu: cmu,
-      ephemeralKey: ephemeralKey,
-      encCiphertext: encCiphertext,
-      outCiphertext: outCiphertext,
-      zkproof: zkproof
+      cv,
+      cmu,
+      ephemeralKey,
+      encCiphertext,
+      outCiphertext,
+      zkproof
     }
   }
   var tx = new Transaction(network)
   tx.version = readInt32()
 
-  //console.log('version: ' +  tx.version + ', offset:' + offset)
+  // console.log('version: ' +  tx.version + ', offset:' + offset)
 
   if (coins.isZcash(network)) {
     // Split the header into fOverwintered and nVersion
-    tx.overwintered = tx.version >>> 31  // Must be 1 for version 3 and up
-    tx.version = tx.version & 0x07FFFFFFF  // 3 for overwinter
+    tx.overwintered = tx.version >>> 31 // Must be 1 for version 3 and up
+    tx.version = tx.version & 0x07FFFFFFF // 3 for overwinter
     if (!network.consensusBranchId.hasOwnProperty(tx.version)) {
       throw new Error('Unsupported Zcash transaction')
     }
   }
 
-  var marker = buffer.readUInt8(offset)
-  var flag = buffer.readUInt8(offset + 1)
+  const marker = buffer.readUInt8(offset)
+  const flag = buffer.readUInt8(offset + 1)
 
-  var hasWitnesses = false
+  let hasWitnesses = false
   if (marker === Transaction.ADVANCED_TRANSACTION_MARKER &&
       flag === Transaction.ADVANCED_TRANSACTION_FLAG &&
       !coins.isZcash(network)) {
@@ -275,7 +275,7 @@ Transaction.fromBuffer = function (buffer, network = networks.default, __noStric
     tx.versionGroupId = readUInt32()
   }
 
-  var vinLen = readVarInt()
+  const vinLen = readVarInt()
   for (var i = 0; i < vinLen; ++i) {
     tx.ins.push({
       hash: readSlice(32),
@@ -286,7 +286,7 @@ Transaction.fromBuffer = function (buffer, network = networks.default, __noStric
     })
   }
 
-  var voutLen = readVarInt()
+  const voutLen = readVarInt()
   for (i = 0; i < voutLen; ++i) {
     tx.outs.push({
       value: readUInt64(),
@@ -312,19 +312,19 @@ Transaction.fromBuffer = function (buffer, network = networks.default, __noStric
 
     if (tx.isSaplingCompatible()) {
       tx.valueBalance = readInt64()
-      var nShieldedSpend = readVarInt()
+      const nShieldedSpend = readVarInt()
       for (i = 0; i < nShieldedSpend; ++i) {
         tx.vShieldedSpend.push(readShieldedSpend())
       }
 
-      var nShieldedOutput = readVarInt()
+      const nShieldedOutput = readVarInt()
       for (i = 0; i < nShieldedOutput; ++i) {
         tx.vShieldedOutput.push(readShieldedOutput())
       }
     }
 
     if (tx.supportsJoinSplits()) {
-      var joinSplitsLen = readVarInt()
+      const joinSplitsLen = readVarInt()
       for (i = 0; i < joinSplitsLen; ++i) {
         tx.joinsplits.push(readJoinSplit())
       }
@@ -354,7 +354,7 @@ Transaction.fromHex = function (hex, network) {
 
 Transaction.isCoinbaseHash = function (buffer) {
   typeforce(types.Hash256bit, buffer)
-  for (var i = 0; i < 32; ++i) {
+  for (let i = 0; i < 32; ++i) {
     if (buffer[i] !== 0) return false
   }
   return true
@@ -390,10 +390,10 @@ Transaction.prototype.addInput = function (hash, index, sequence, scriptSig) {
 
   // Add the input and return the input's index
   return (this.ins.push({
-    hash: hash,
-    index: index,
+    hash,
+    index,
     script: scriptSig || EMPTY_SCRIPT,
-    sequence: sequence,
+    sequence,
     witness: EMPTY_WITNESS
   }) - 1)
 }
@@ -404,7 +404,7 @@ Transaction.prototype.addOutput = function (scriptPubKey, value) {
   // Add the output and return the output's index
   return (this.outs.push({
     script: scriptPubKey,
-    value: value
+    value
   }) - 1)
 }
 
@@ -415,8 +415,8 @@ Transaction.prototype.hasWitnesses = function () {
 }
 
 Transaction.prototype.weight = function () {
-  var base = this.__byteLength(false)
-  var total = this.__byteLength(true)
+  const base = this.__byteLength(false)
+  const total = this.__byteLength(true)
   return base * 3 + total
 }
 
@@ -433,9 +433,9 @@ Transaction.prototype.getShieldedSpendByteLength = function () {
     return 0
   }
 
-  var byteLength = 0
-  byteLength += varuint.encodingLength(this.vShieldedSpend.length)  // nShieldedSpend
-  byteLength += (384 * this.vShieldedSpend.length)  // vShieldedSpend
+  let byteLength = 0
+  byteLength += varuint.encodingLength(this.vShieldedSpend.length) // nShieldedSpend
+  byteLength += (384 * this.vShieldedSpend.length) // vShieldedSpend
   return byteLength
 }
 
@@ -443,9 +443,9 @@ Transaction.prototype.getShieldedOutputByteLength = function () {
   if (!this.isSaplingCompatible()) {
     return 0
   }
-  var byteLength = 0
-  byteLength += varuint.encodingLength(this.vShieldedOutput.length)  // nShieldedOutput
-  byteLength += (948 * this.vShieldedOutput.length)  // vShieldedOutput
+  let byteLength = 0
+  byteLength += varuint.encodingLength(this.vShieldedOutput.length) // nShieldedOutput
+  byteLength += (948 * this.vShieldedOutput.length) // vShieldedOutput
   return byteLength
 }
 
@@ -453,21 +453,21 @@ Transaction.prototype.getJoinSplitByteLength = function () {
   if (!this.supportsJoinSplits()) {
     return 0
   }
-  var joinSplitsLen = this.joinsplits.length
-  var byteLength = 0
-  byteLength += bufferutils.varIntSize(joinSplitsLen)  // vJoinSplit
+  const joinSplitsLen = this.joinsplits.length
+  let byteLength = 0
+  byteLength += bufferutils.varIntSize(joinSplitsLen) // vJoinSplit
 
   if (joinSplitsLen > 0) {
     // Both pre and post Sapling JoinSplits are encoded with the following data:
     // 8 vpub_old, 8 vpub_new, 32 anchor, joinSplitsLen * 32 nullifiers, joinSplitsLen * 32 commitments, 32 ephemeralKey
     // 32 ephemeralKey, 32 randomSeed, joinsplit.macs.length * 32 vmacs
     if (this.isSaplingCompatible()) {
-      byteLength += 1698 * joinSplitsLen  // vJoinSplit using JSDescriptionGroth16
+      byteLength += 1698 * joinSplitsLen // vJoinSplit using JSDescriptionGroth16
     } else {
-      byteLength += 1802 * joinSplitsLen  // vJoinSplit using JSDescriptionPHGR13
+      byteLength += 1802 * joinSplitsLen // vJoinSplit using JSDescriptionPHGR13
     }
-    byteLength += 32  // joinSplitPubKey
-    byteLength += 64  // joinSplitSig
+    byteLength += 32 // joinSplitPubKey
+    byteLength += 64 // joinSplitSig
   }
 
   return byteLength
@@ -477,21 +477,21 @@ Transaction.prototype.zcashTransactionByteLength = function () {
   if (!coins.isZcash(this.network)) {
     throw new Error('zcashTransactionByteLength can only be called when using Zcash network')
   }
-  var byteLength = 0
-  byteLength += 4  // Header
+  let byteLength = 0
+  byteLength += 4 // Header
   if (this.isOverwinterCompatible()) {
-    byteLength += 4  // nVersionGroupId
+    byteLength += 4 // nVersionGroupId
   }
-  byteLength += varuint.encodingLength(this.ins.length)  // tx_in_count
-  byteLength += this.ins.reduce(function (sum, input) { return sum + 40 + varSliceSize(input.script) }, 0)  // tx_in
-  byteLength += varuint.encodingLength(this.outs.length)  // tx_out_count
-  byteLength += this.outs.reduce(function (sum, output) { return sum + 8 + varSliceSize(output.script) }, 0)  // tx_out
-  byteLength += 4  // lock_time
+  byteLength += varuint.encodingLength(this.ins.length) // tx_in_count
+  byteLength += this.ins.reduce(function (sum, input) { return sum + 40 + varSliceSize(input.script) }, 0) // tx_in
+  byteLength += varuint.encodingLength(this.outs.length) // tx_out_count
+  byteLength += this.outs.reduce(function (sum, output) { return sum + 8 + varSliceSize(output.script) }, 0) // tx_out
+  byteLength += 4 // lock_time
   if (this.isOverwinterCompatible()) {
-    byteLength += 4  // nExpiryHeight
+    byteLength += 4 // nExpiryHeight
   }
   if (this.isSaplingCompatible()) {
-    byteLength += 8  // valueBalance
+    byteLength += 8 // valueBalance
     byteLength += this.getShieldedSpendByteLength()
     byteLength += this.getShieldedOutputByteLength()
   }
@@ -500,13 +500,13 @@ Transaction.prototype.zcashTransactionByteLength = function () {
   }
   if (this.isSaplingCompatible() &&
     this.vShieldedSpend.length + this.vShieldedOutput.length > 0) {
-    byteLength += 64  // bindingSig
+    byteLength += 64 // bindingSig
   }
   return byteLength
 }
 
 Transaction.prototype.__byteLength = function (__allowWitness) {
-  var hasWitnesses = __allowWitness && this.hasWitnesses()
+  const hasWitnesses = __allowWitness && this.hasWitnesses()
 
   if (coins.isZcash(this.network)) {
     return this.zcashTransactionByteLength()
@@ -523,7 +523,7 @@ Transaction.prototype.__byteLength = function (__allowWitness) {
 }
 
 Transaction.prototype.clone = function () {
-  var newTx = new Transaction(this.network)
+  const newTx = new Transaction(this.network)
   newTx.version = this.version
   newTx.locktime = this.locktime
   newTx.network = this.network
@@ -609,8 +609,8 @@ Transaction.prototype.clone = function () {
  * @returns {number}
  */
 Transaction.prototype.getHeader = function () {
-  var mask = (this.overwintered ? 1 : 0)
-  var header = this.version | (mask << 31)
+  const mask = (this.overwintered ? 1 : 0)
+  const header = this.version | (mask << 31)
   return header
 }
 
@@ -629,11 +629,11 @@ Transaction.prototype.hashForSignature = function (inIndex, prevOutScript, hashT
   if (inIndex >= this.ins.length) return ONE
 
   // ignore OP_CODESEPARATOR
-  var ourScript = bscript.compile(bscript.decompile(prevOutScript).filter(function (x) {
+  const ourScript = bscript.compile(bscript.decompile(prevOutScript).filter(function (x) {
     return x !== opcodes.OP_CODESEPARATOR
   }))
 
-  var txTmp = this.clone()
+  const txTmp = this.clone()
 
   // SIGHASH_NONE: ignore all outputs? (wildcard payee)
   if ((hashType & 0x1f) === Transaction.SIGHASH_NONE) {
@@ -655,7 +655,7 @@ Transaction.prototype.hashForSignature = function (inIndex, prevOutScript, hashT
     txTmp.outs.length = inIndex + 1
 
     // "blank" outputs before
-    for (var i = 0; i < inIndex; i++) {
+    for (let i = 0; i < inIndex; i++) {
       txTmp.outs[i] = BLANK_OUTPUT
     }
 
@@ -680,7 +680,7 @@ Transaction.prototype.hashForSignature = function (inIndex, prevOutScript, hashT
   }
 
   // serialize and hash
-  var buffer = Buffer.allocUnsafe(txTmp.__byteLength(false) + 4)
+  const buffer = Buffer.allocUnsafe(txTmp.__byteLength(false) + 4)
   buffer.writeInt32LE(hashType, buffer.length - 4)
   txTmp.__toBuffer(buffer, 0, false)
 
@@ -694,7 +694,7 @@ Transaction.prototype.hashForSignature = function (inIndex, prevOutScript, hashT
  * @returns 256-bit BLAKE2b hash
  */
 Transaction.prototype.getBlake2bHash = function (bufferToHash, personalization) {
-  var out = Buffer.allocUnsafe(32)
+  const out = Buffer.allocUnsafe(32)
   return blake2b(out.length, null, null, Buffer.from(personalization)).update(bufferToHash).digest(out)
 }
 
@@ -705,7 +705,7 @@ Transaction.prototype.getBlake2bHash = function (bufferToHash, personalization) 
  */
 Transaction.prototype.getPrevoutHash = function (hashType) {
   if (!(hashType & Transaction.SIGHASH_ANYONECANPAY)) {
-    var bufferWriter = new BufferWriter(36 * this.ins.length)
+    const bufferWriter = new BufferWriter(36 * this.ins.length)
 
     this.ins.forEach(function (txIn) {
       bufferWriter.writeSlice(txIn.hash)
@@ -729,7 +729,7 @@ Transaction.prototype.getSequenceHash = function (hashType) {
   if (!(hashType & Transaction.SIGHASH_ANYONECANPAY) &&
     (hashType & 0x1f) !== Transaction.SIGHASH_SINGLE &&
     (hashType & 0x1f) !== Transaction.SIGHASH_NONE) {
-    var bufferWriter = new BufferWriter(4 * this.ins.length)
+    const bufferWriter = new BufferWriter(4 * this.ins.length)
 
     this.ins.forEach(function (txIn) {
       bufferWriter.writeUInt32(txIn.sequence)
@@ -750,10 +750,10 @@ Transaction.prototype.getSequenceHash = function (hashType) {
  * @returns double SHA-256, 256-bit BLAKE2b hash or 256-bit zero if doesn't apply
  */
 Transaction.prototype.getOutputsHash = function (hashType, inIndex) {
-  var bufferWriter
+  let bufferWriter
   if ((hashType & 0x1f) !== Transaction.SIGHASH_SINGLE && (hashType & 0x1f) !== Transaction.SIGHASH_NONE) {
     // Find out the size of the outputs and write them
-    var txOutsSize = this.outs.reduce(function (sum, output) {
+    const txOutsSize = this.outs.reduce(function (sum, output) {
       return sum + 8 + varSliceSize(output.script)
     }, 0)
 
@@ -770,7 +770,7 @@ Transaction.prototype.getOutputsHash = function (hashType, inIndex) {
     return bcrypto.hash256(bufferWriter.getBuffer())
   } else if ((hashType & 0x1f) === Transaction.SIGHASH_SINGLE && inIndex < this.outs.length) {
     // Write only the output specified in inIndex
-    var output = this.outs[inIndex]
+    const output = this.outs[inIndex]
 
     bufferWriter = new BufferWriter(8 + varSliceSize(output.script))
     bufferWriter.writeUInt64(output.value)
@@ -794,7 +794,7 @@ Transaction.prototype.getOutputsHash = function (hashType, inIndex) {
  */
 Transaction.prototype.hashForZcashSignature = function (inIndex, prevOutScript, value, hashType) {
   console.log('Hash for zcash signature initialized')
-  
+
   typeforce(types.tuple(types.UInt32, types.Buffer, types.Satoshi, types.UInt32), arguments)
   console.log('Typeforce completed')
   if (!coins.isZcash(this.network)) {
@@ -809,28 +809,28 @@ Transaction.prototype.hashForZcashSignature = function (inIndex, prevOutScript, 
 
   console.log('checking overwinter compatibility')
   if (this.isOverwinterCompatible()) {
-    var hashPrevouts = this.getPrevoutHash(hashType)
-    var hashSequence = this.getSequenceHash(hashType)
-    var hashOutputs = this.getOutputsHash(hashType, inIndex)
-    var hashJoinSplits = ZERO
-    var hashShieldedSpends = ZERO
-    var hashShieldedOutputs = ZERO
+    const hashPrevouts = this.getPrevoutHash(hashType)
+    const hashSequence = this.getSequenceHash(hashType)
+    const hashOutputs = this.getOutputsHash(hashType, inIndex)
+    const hashJoinSplits = ZERO
+    const hashShieldedSpends = ZERO
+    const hashShieldedOutputs = ZERO
     console.log('hashes evaluated')
 
-    var bufferWriter
-    var baseBufferSize = 0
-    baseBufferSize += 4 * 5  // header, nVersionGroupId, lock_time, nExpiryHeight, hashType
-    baseBufferSize += 32 * 4  // 256 hashes: hashPrevouts, hashSequence, hashOutputs, hashJoinSplits
+    let bufferWriter
+    let baseBufferSize = 0
+    baseBufferSize += 4 * 5 // header, nVersionGroupId, lock_time, nExpiryHeight, hashType
+    baseBufferSize += 32 * 4 // 256 hashes: hashPrevouts, hashSequence, hashOutputs, hashJoinSplits
     if (inIndex !== VALUE_UINT64_MAX) {
       // If this hash is for a transparent input signature (i.e. not for txTo.joinSplitSig), we need extra space
-      baseBufferSize += 4 * 2  // input.index, input.sequence
-      baseBufferSize += 8  // value
-      baseBufferSize += 32  // input.hash
-      baseBufferSize += varSliceSize(prevOutScript)  // prevOutScript
+      baseBufferSize += 4 * 2 // input.index, input.sequence
+      baseBufferSize += 8 // value
+      baseBufferSize += 32 // input.hash
+      baseBufferSize += varSliceSize(prevOutScript) // prevOutScript
     }
     if (this.isSaplingCompatible()) {
-      baseBufferSize += 32 * 2  // hashShieldedSpends and hashShieldedOutputs
-      baseBufferSize += 8  // valueBalance
+      baseBufferSize += 32 * 2 // hashShieldedSpends and hashShieldedOutputs
+      baseBufferSize += 8 // valueBalance
     }
     bufferWriter = new BufferWriter(baseBufferSize)
 
@@ -856,7 +856,7 @@ Transaction.prototype.hashForZcashSignature = function (inIndex, prevOutScript, 
       // The input being signed (replacing the scriptSig with scriptCode + amount)
       // The prevout may already be contained in hashPrevout, and the nSequence
       // may already be contained in hashSequence.
-      var input = this.ins[inIndex]
+      const input = this.ins[inIndex]
       bufferWriter.writeSlice(input.hash)
       bufferWriter.writeUInt32(input.index)
       bufferWriter.writeVarSlice(prevOutScript)
@@ -864,17 +864,15 @@ Transaction.prototype.hashForZcashSignature = function (inIndex, prevOutScript, 
       bufferWriter.writeUInt32(input.sequence)
     }
 
-    var personalization = Buffer.alloc(16)
-    var prefix = 'ZcashSigHash'
+    const personalization = Buffer.alloc(16)
+    const prefix = 'ZcashSigHash'
     personalization.write(prefix)
     personalization.writeUInt32LE(this.network.consensusBranchId[this.version], prefix.length)
 
     return this.getBlake2bHash(bufferWriter.getBuffer(), personalization)
-  }
-  else
-  {
+  } else {
     console.log('not overwinter compatible')
-    return this.hashForSignature(inIndex, prevOutScript, hashType);
+    return this.hashForSignature(inIndex, prevOutScript, hashType)
   }
 }
 
@@ -887,18 +885,18 @@ Transaction.prototype.hashForZcashSignature = function (inIndex, prevOutScript, 
  * @returns double SHA-256 or 256-bit BLAKE2b hash
  */
 Transaction.prototype.hashForVerusSignature = function (inIndex, prevOutScript, value, hashType) {
-  return this.hashForZcashSignature(inIndex, prevOutScript, value, hashType);
+  return this.hashForZcashSignature(inIndex, prevOutScript, value, hashType)
 }
 
 Transaction.prototype.hashForWitnessV0 = function (inIndex, prevOutScript, value, hashType) {
   typeforce(types.tuple(types.UInt32, types.Buffer, types.Satoshi, types.UInt32), arguments)
 
-  var hashPrevouts = this.getPrevoutHash(hashType)
-  var hashSequence = this.getSequenceHash(hashType)
-  var hashOutputs = this.getOutputsHash(hashType, inIndex)
+  const hashPrevouts = this.getPrevoutHash(hashType)
+  const hashSequence = this.getSequenceHash(hashType)
+  const hashOutputs = this.getOutputsHash(hashType, inIndex)
 
-  var bufferWriter = new BufferWriter(156 + varSliceSize(prevOutScript))
-  var input = this.ins[inIndex]
+  const bufferWriter = new BufferWriter(156 + varSliceSize(prevOutScript))
+  const input = this.ins[inIndex]
   bufferWriter.writeUInt32(this.version)
   bufferWriter.writeSlice(hashPrevouts)
   bufferWriter.writeSlice(hashSequence)
@@ -948,8 +946,8 @@ Transaction.prototype.hashForGoldSignature = function (inIndex, prevOutScript, i
   // therefore we can pull out the setting of nForkHashType
   // and pass it into the functions.
 
-  var nForkHashType = hashType
-  var fUseForkId = (hashType & Transaction.SIGHASH_BITCOINCASHBIP143) > 0
+  let nForkHashType = hashType
+  const fUseForkId = (hashType & Transaction.SIGHASH_BITCOINCASHBIP143) > 0
   if (fUseForkId) {
     nForkHashType |= this.network.forkId << 8
   }
@@ -981,7 +979,7 @@ Transaction.prototype.toBuffer = function (buffer, initialOffset) {
 Transaction.prototype.__toBuffer = function (buffer, initialOffset, __allowWitness) {
   if (!buffer) buffer = Buffer.allocUnsafe(this.__byteLength(__allowWitness))
 
-  var offset = initialOffset || 0
+  let offset = initialOffset || 0
   function writeSlice (slice) { offset += slice.copy(buffer, offset) }
   function writeUInt8 (i) { offset = buffer.writeUInt8(i, offset) }
   function writeUInt32 (i) { offset = buffer.writeUInt32LE(i, offset) }
@@ -1005,14 +1003,14 @@ Transaction.prototype.__toBuffer = function (buffer, initialOffset, __allowWitne
   }
 
   if (this.isOverwinterCompatible()) {
-    var mask = (this.overwintered ? 1 : 0)
-    writeInt32(this.version | (mask << 31))  // Set overwinter bit
+    const mask = (this.overwintered ? 1 : 0)
+    writeInt32(this.version | (mask << 31)) // Set overwinter bit
     writeUInt32(this.versionGroupId)
   } else {
     writeInt32(this.version)
   }
 
-  var hasWitnesses = __allowWitness && this.hasWitnesses()
+  const hasWitnesses = __allowWitness && this.hasWitnesses()
 
   if (hasWitnesses) {
     writeUInt8(Transaction.ADVANCED_TRANSACTION_MARKER)

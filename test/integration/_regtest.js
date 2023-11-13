@@ -1,8 +1,8 @@
-var bitcoin = require('../../')
-var dhttp = require('dhttp/200')
+const bitcoin = require('../../')
+const dhttp = require('dhttp/200')
 
-var APIPASS = process.env.APIPASS || 'satoshi'
-var APIURL = 'https://api.dcousens.cloud/1'
+const APIPASS = process.env.APIPASS || 'satoshi'
+const APIURL = 'https://api.dcousens.cloud/1'
 
 function broadcast (txHex, callback) {
   dhttp({
@@ -56,7 +56,7 @@ function unspents (address, callback) {
 }
 
 function verify (txo, callback) {
-  var { txId } = txo
+  const { txId } = txo
 
   fetch(txId, function (err, txHex) {
     if (err) return callback(err)
@@ -73,14 +73,14 @@ function randomAddress () {
 }
 
 module.exports = {
-  broadcast: broadcast,
-  faucet: faucet,
-  fetch: fetch,
-  height: height,
-  mine: mine,
+  broadcast,
+  faucet,
+  fetch,
+  height,
+  mine,
   network: bitcoin.networks.testnet,
-  unspents: unspents,
-  verify: verify,
-  randomAddress: randomAddress,
+  unspents,
+  verify,
+  randomAddress,
   RANDOM_ADDRESS: randomAddress()
 }

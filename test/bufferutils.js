@@ -1,9 +1,9 @@
 /* global describe, it */
 
-var assert = require('assert')
-var bufferutils = require('../src/bufferutils')
+const assert = require('assert')
+const bufferutils = require('../src/bufferutils')
 
-var fixtures = require('./fixtures/bufferutils.json')
+const fixtures = require('./fixtures/bufferutils.json')
 
 describe('bufferutils', function () {
   describe('pushDataSize', function () {
@@ -11,7 +11,7 @@ describe('bufferutils', function () {
       it('determines the pushDataSize of ' + f.dec + ' correctly', function () {
         if (!f.hexPD) return
 
-        var size = bufferutils.pushDataSize(f.dec)
+        const size = bufferutils.pushDataSize(f.dec)
 
         assert.strictEqual(size, f.hexPD.length / 2)
       })
@@ -23,9 +23,9 @@ describe('bufferutils', function () {
       if (!f.hexPD) return
 
       it('decodes ' + f.hexPD + ' correctly', function () {
-        var buffer = Buffer.from(f.hexPD, 'hex')
-        var d = bufferutils.readPushDataInt(buffer, 0)
-        var fopcode = parseInt(f.hexPD.substr(0, 2), 16)
+        const buffer = Buffer.from(f.hexPD, 'hex')
+        const d = bufferutils.readPushDataInt(buffer, 0)
+        const fopcode = parseInt(f.hexPD.substr(0, 2), 16)
 
         assert.strictEqual(d.opcode, fopcode)
         assert.strictEqual(d.number, f.dec)
@@ -37,9 +37,9 @@ describe('bufferutils', function () {
       if (!f.hexPD) return
 
       it('decodes ' + f.hexPD + ' as null', function () {
-        var buffer = Buffer.from(f.hexPD, 'hex')
+        const buffer = Buffer.from(f.hexPD, 'hex')
 
-        var n = bufferutils.readPushDataInt(buffer, 0)
+        const n = bufferutils.readPushDataInt(buffer, 0)
         assert.strictEqual(n, null)
       })
     })
@@ -48,8 +48,8 @@ describe('bufferutils', function () {
   describe('readInt64LE', function () {
     fixtures.negative.forEach(function (f) {
       it('decodes ' + f.hex64 + ' correctly', function () {
-        var buffer = Buffer.from(f.hex64, 'hex')
-        var number = bufferutils.readInt64LE(buffer, 0)
+        const buffer = Buffer.from(f.hex64, 'hex')
+        const number = bufferutils.readInt64LE(buffer, 0)
 
         assert.strictEqual(number, f.dec)
       })
@@ -59,8 +59,8 @@ describe('bufferutils', function () {
   describe('readUInt64LE', function () {
     fixtures.valid.forEach(function (f) {
       it('decodes ' + f.hex64 + ' correctly', function () {
-        var buffer = Buffer.from(f.hex64, 'hex')
-        var number = bufferutils.readUInt64LE(buffer, 0)
+        const buffer = Buffer.from(f.hex64, 'hex')
+        const number = bufferutils.readUInt64LE(buffer, 0)
 
         assert.strictEqual(number, f.dec)
       })
@@ -68,7 +68,7 @@ describe('bufferutils', function () {
 
     fixtures.invalid.readUInt64LE.forEach(function (f) {
       it('throws on ' + f.description, function () {
-        var buffer = Buffer.from(f.hex64, 'hex')
+        const buffer = Buffer.from(f.hex64, 'hex')
 
         assert.throws(function () {
           bufferutils.readUInt64LE(buffer, 0)
@@ -80,8 +80,8 @@ describe('bufferutils', function () {
   describe('readVarInt', function () {
     fixtures.valid.forEach(function (f) {
       it('decodes ' + f.hexVI + ' correctly', function () {
-        var buffer = Buffer.from(f.hexVI, 'hex')
-        var d = bufferutils.readVarInt(buffer, 0)
+        const buffer = Buffer.from(f.hexVI, 'hex')
+        const d = bufferutils.readVarInt(buffer, 0)
 
         assert.strictEqual(d.number, f.dec)
         assert.strictEqual(d.size, buffer.length)
@@ -90,7 +90,7 @@ describe('bufferutils', function () {
 
     fixtures.invalid.readUInt64LE.forEach(function (f) {
       it('throws on ' + f.description, function () {
-        var buffer = Buffer.from(f.hexVI, 'hex')
+        const buffer = Buffer.from(f.hexVI, 'hex')
 
         assert.throws(function () {
           bufferutils.readVarInt(buffer, 0)
@@ -102,7 +102,7 @@ describe('bufferutils', function () {
   describe('varIntBuffer', function () {
     fixtures.valid.forEach(function (f) {
       it('encodes ' + f.dec + ' correctly', function () {
-        var buffer = bufferutils.varIntBuffer(f.dec)
+        const buffer = bufferutils.varIntBuffer(f.dec)
 
         assert.strictEqual(buffer.toString('hex'), f.hexVI)
       })
@@ -112,7 +112,7 @@ describe('bufferutils', function () {
   describe('varIntSize', function () {
     fixtures.valid.forEach(function (f) {
       it('determines the varIntSize of ' + f.dec + ' correctly', function () {
-        var size = bufferutils.varIntSize(f.dec)
+        const size = bufferutils.varIntSize(f.dec)
 
         assert.strictEqual(size, f.hexVI.length / 2)
       })
@@ -124,9 +124,9 @@ describe('bufferutils', function () {
       if (!f.hexPD) return
 
       it('encodes ' + f.dec + ' correctly', function () {
-        var buffer = Buffer.alloc(5, 0)
+        const buffer = Buffer.alloc(5, 0)
 
-        var n = bufferutils.writePushDataInt(buffer, f.dec, 0)
+        const n = bufferutils.writePushDataInt(buffer, f.dec, 0)
         assert.strictEqual(buffer.slice(0, n).toString('hex'), f.hexPD)
       })
     })
@@ -135,7 +135,7 @@ describe('bufferutils', function () {
   describe('writeUInt64LE', function () {
     fixtures.valid.forEach(function (f) {
       it('encodes ' + f.dec + ' correctly', function () {
-        var buffer = Buffer.alloc(8, 0)
+        const buffer = Buffer.alloc(8, 0)
 
         bufferutils.writeUInt64LE(buffer, f.dec, 0)
         assert.strictEqual(buffer.toString('hex'), f.hex64)
@@ -144,7 +144,7 @@ describe('bufferutils', function () {
 
     fixtures.invalid.readUInt64LE.forEach(function (f) {
       it('throws on ' + f.description, function () {
-        var buffer = Buffer.alloc(8, 0)
+        const buffer = Buffer.alloc(8, 0)
 
         assert.throws(function () {
           bufferutils.writeUInt64LE(buffer, f.dec, 0)
@@ -156,16 +156,16 @@ describe('bufferutils', function () {
   describe('writeVarInt', function () {
     fixtures.valid.forEach(function (f) {
       it('encodes ' + f.dec + ' correctly', function () {
-        var buffer = Buffer.alloc(9, 0)
+        const buffer = Buffer.alloc(9, 0)
 
-        var n = bufferutils.writeVarInt(buffer, f.dec, 0)
+        const n = bufferutils.writeVarInt(buffer, f.dec, 0)
         assert.strictEqual(buffer.slice(0, n).toString('hex'), f.hexVI)
       })
     })
 
     fixtures.invalid.readUInt64LE.forEach(function (f) {
       it('throws on ' + f.description, function () {
-        var buffer = Buffer.alloc(9, 0)
+        const buffer = Buffer.alloc(9, 0)
 
         assert.throws(function () {
           bufferutils.writeVarInt(buffer, f.dec, 0)

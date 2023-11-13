@@ -1,7 +1,7 @@
 // https://en.bitcoin.it/wiki/List_of_address_prefixes
 // Dogecoin BIP32 is a proposed standard: https://bitcointalk.org/index.php?topic=409731
-var coins = require('./coins')
-​
+const coins = require('./coins')
+
 module.exports = {
   default: {
     messagePrefix: '\x18Default Signed Message:\n',
@@ -258,5 +258,5 @@ module.exports = {
     wif: 0x80,
     coin: coins.DGB,
     dustThreshold: 1000
-  },
+  }
 }

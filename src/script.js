@@ -1,13 +1,13 @@
-var Buffer = require('safe-buffer').Buffer
-var bip66 = require('bip66')
-var pushdata = require('pushdata-bitcoin')
-var typeforce = require('typeforce')
-var types = require('./types')
-var scriptNumber = require('./script_number')
+const Buffer = require('safe-buffer').Buffer
+const bip66 = require('bip66')
+const pushdata = require('pushdata-bitcoin')
+const typeforce = require('typeforce')
+const types = require('./types')
+const scriptNumber = require('./script_number')
 
-var OPS = require('bitcoin-ops')
-var REVERSE_OPS = require('bitcoin-ops/map')
-var OP_INT_BASE = OPS.OP_RESERVED // OP_1 - 1
+const OPS = require('bitcoin-ops')
+const REVERSE_OPS = require('bitcoin-ops/map')
+const OP_INT_BASE = OPS.OP_RESERVED // OP_1 - 1
 
 function isOPInt (value) {
   return types.Number(value) &&
@@ -37,7 +37,7 @@ function compile (chunks) {
 
   typeforce(types.Array, chunks)
 
-  var bufferSize = chunks.reduce(function (accum, chunk) {
+  const bufferSize = chunks.reduce(function (accum, chunk) {
     // data chunk
     if (Buffer.isBuffer(chunk)) {
       // adhere to BIP62.3, minimal push policy
@@ -52,14 +52,14 @@ function compile (chunks) {
     return accum + 1
   }, 0.0)
 
-  var buffer = Buffer.allocUnsafe(bufferSize)
-  var offset = 0
+  const buffer = Buffer.allocUnsafe(bufferSize)
+  let offset = 0
 
   chunks.forEach(function (chunk) {
     // data chunk
     if (Buffer.isBuffer(chunk)) {
       // adhere to BIP62.3, minimal push policy
-      var opcode = asMinimalOP(chunk)
+      const opcode = asMinimalOP(chunk)
       if (opcode !== undefined) {
         buffer.writeUInt8(opcode, offset)
         offset += 1
@@ -87,15 +87,15 @@ function decompile (buffer) {
 
   typeforce(types.Buffer, buffer)
 
-  var chunks = []
-  var i = 0
+  const chunks = []
+  let i = 0
 
   while (i < buffer.length) {
-    var opcode = buffer[i]
+    const opcode = buffer[i]
 
     // data chunk
     if ((opcode > OPS.OP_0) && (opcode <= OPS.OP_PUSHDATA4)) {
-      var d = pushdata.decode(buffer, i)
+      const d = pushdata.decode(buffer, i)
 
       // did reading a pushDataInt fail? empty script
       if (d === null) return []
@@ -104,11 +104,11 @@ function decompile (buffer) {
       // attempt to read too much data? empty script
       if (i + d.number > buffer.length) return []
 
-      var data = buffer.slice(i, i + d.number)
+      const data = buffer.slice(i, i + d.number)
       i += d.number
 
       // decompile minimally
-      var op = asMinimalOP(data)
+      const op = asMinimalOP(data)
       if (op !== undefined) {
         chunks.push(op)
       } else {
@@ -134,7 +134,7 @@ function toASM (chunks) {
   return chunks.map(function (chunk) {
     // data?
     if (Buffer.isBuffer(chunk)) {
-      var op = asMinimalOP(chunk)
+      const op = asMinimalOP(chunk)
       if (op === undefined) return chunk.toString('hex')
       chunk = op
     }
@@ -185,9 +185,9 @@ function isCanonicalPubKey (buffer) {
 }
 
 function isDefinedHashType (hashType) {
-  var hashTypeMod = hashType & ~0xc0
+  const hashTypeMod = hashType & ~0xc0
 
-// return hashTypeMod > SIGHASH_ALL && hashTypeMod < SIGHASH_SINGLE
+  // return hashTypeMod > SIGHASH_ALL && hashTypeMod < SIGHASH_SINGLE
   return hashTypeMod > 0x00 && hashTypeMod < 0x04
 }
 
@@ -199,16 +199,16 @@ function isCanonicalSignature (buffer) {
 }
 
 module.exports = {
-  compile: compile,
-  decompile: decompile,
-  fromASM: fromASM,
-  toASM: toASM,
-  toStack: toStack,
+  compile,
+  decompile,
+  fromASM,
+  toASM,
+  toStack,
 
   number: require('./script_number'),
 
-  isCanonicalPubKey: isCanonicalPubKey,
-  isCanonicalSignature: isCanonicalSignature,
-  isPushOnly: isPushOnly,
-  isDefinedHashType: isDefinedHashType
+  isCanonicalPubKey,
+  isCanonicalSignature,
+  isPushOnly,
+  isDefinedHashType
 }

@@ -1,31 +1,31 @@
-var Buffer = require('safe-buffer').Buffer
-var bech32 = require('bech32')
-var bs58check = require('bs58check')
-var bscript = require('./script')
-var btemplates = require('./templates')
-var networks = require('./networks')
-var typeforce = require('typeforce')
-var types = require('./types')
+const Buffer = require('safe-buffer').Buffer
+const bech32 = require('bech32')
+const bs58check = require('bs58check')
+const bscript = require('./script')
+const btemplates = require('./templates')
+const networks = require('./networks')
+const typeforce = require('typeforce')
+const types = require('./types')
 
 function fromBase58Check (address) {
-  var payload = Buffer.from(bs58check.decode(address))
+  const payload = Buffer.from(bs58check.decode(address))
 
   // TODO: 4.0.0, move to "toOutputScript"
   if (payload.length < 21) throw new TypeError(address + ' is too short')
   if (payload.length > 22) throw new TypeError(address + ' is too long')
 
-  var multibyte = payload.length === 22
-  var offset = multibyte ? 2 : 1
+  const multibyte = payload.length === 22
+  const offset = multibyte ? 2 : 1
 
-  var version = multibyte ? payload.readUInt16BE(0) : payload[0]
-  var hash = payload.slice(offset)
+  const version = multibyte ? payload.readUInt16BE(0) : payload[0]
+  const hash = payload.slice(offset)
 
-  return { version: version, hash: hash }
+  return { version, hash }
 }
 
 function fromBech32 (address) {
-  var result = bech32.decode(address)
-  var data = bech32.fromWords(result.words.slice(1))
+  const result = bech32.decode(address)
+  const data = bech32.fromWords(result.words.slice(1))
 
   return {
     version: result.words[0],
@@ -39,11 +39,11 @@ function toBase58Check (hash, version) {
 
   // Zcash adds an extra prefix resulting in a bigger (22 bytes) payload. We identify them Zcash by checking if the
   // version is multibyte (2 bytes instead of 1)
-  var multibyte = version > 0xff
-  var size = multibyte ? 22 : 21
-  var offset = multibyte ? 2 : 1
+  const multibyte = version > 0xff
+  const size = multibyte ? 22 : 21
+  const offset = multibyte ? 2 : 1
 
-  var payload = Buffer.allocUnsafe(size)
+  const payload = Buffer.allocUnsafe(size)
   multibyte ? payload.writeUInt16BE(version, 0) : payload.writeUInt8(version, 0)
   hash.copy(payload, offset)
 
@@ -51,7 +51,7 @@ function toBase58Check (hash, version) {
 }
 
 function toBech32 (data, version, prefix) {
-  var words = bech32.toWords(data)
+  const words = bech32.toWords(data)
   words.unshift(version)
 
   return bech32.encode(prefix, words)
@@ -71,7 +71,7 @@ function fromOutputScript (outputScript, network) {
 function toOutputScript (address, network) {
   network = network || networks.default
 
-  var decode
+  let decode
   try {
     decode = fromBase58Check(address)
   } catch (e) {}
@@ -97,10 +97,10 @@ function toOutputScript (address, network) {
 }
 
 module.exports = {
-  fromBase58Check: fromBase58Check,
-  fromBech32: fromBech32,
-  fromOutputScript: fromOutputScript,
-  toBase58Check: toBase58Check,
-  toBech32: toBech32,
-  toOutputScript: toOutputScript
+  fromBase58Check,
+  fromBech32,
+  fromOutputScript,
+  toBase58Check,
+  toBech32,
+  toOutputScript
 }

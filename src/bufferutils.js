@@ -1,5 +1,5 @@
-var pushdata = require('pushdata-bitcoin')
-var varuint = require('varuint-bitcoin')
+const pushdata = require('pushdata-bitcoin')
+const varuint = require('varuint-bitcoin')
 
 // https://github.com/feross/buffer/blob/master/index.js#L1127
 function verifuint (value, max) {
@@ -10,8 +10,8 @@ function verifuint (value, max) {
 }
 
 function readUInt64LE (buffer, offset) {
-  var a = buffer.readUInt32LE(offset)
-  var b = buffer.readUInt32LE(offset + 4)
+  const a = buffer.readUInt32LE(offset)
+  let b = buffer.readUInt32LE(offset + 4)
   b *= 0x100000000
 
   verifuint(b + a, 0x001fffffffffffff)
@@ -20,8 +20,8 @@ function readUInt64LE (buffer, offset) {
 }
 
 function readInt64LE (buffer, offset) {
-  var a = buffer.readUInt32LE(offset)
-  var b = buffer.readInt32LE(offset + 4)
+  const a = buffer.readUInt32LE(offset)
+  let b = buffer.readInt32LE(offset + 4)
   b *= 0x100000000
 
   return b + a
@@ -37,7 +37,7 @@ function writeUInt64LE (buffer, value, offset) {
 
 // TODO: remove in 4.0.0?
 function readVarInt (buffer, offset) {
-  var result = varuint.decode(buffer, offset)
+  const result = varuint.decode(buffer, offset)
 
   return {
     number: result,
@@ -54,12 +54,12 @@ function writeVarInt (buffer, number, offset) {
 module.exports = {
   pushDataSize: pushdata.encodingLength,
   readPushDataInt: pushdata.decode,
-  readUInt64LE: readUInt64LE,
-  readInt64LE: readInt64LE,
-  readVarInt: readVarInt,
+  readUInt64LE,
+  readInt64LE,
+  readVarInt,
   varIntBuffer: varuint.encode,
   varIntSize: varuint.encodingLength,
   writePushDataInt: pushdata.encode,
-  writeUInt64LE: writeUInt64LE,
-  writeVarInt: writeVarInt
+  writeUInt64LE,
+  writeVarInt
 }

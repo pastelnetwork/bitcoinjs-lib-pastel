@@ -1,16 +1,16 @@
-var baddress = require('./address')
-var bcrypto = require('./crypto')
-var ecdsa = require('./ecdsa')
-var randomBytes = require('randombytes')
-var typeforce = require('typeforce')
-var types = require('./types')
-var wif = require('wif')
+const baddress = require('./address')
+const bcrypto = require('./crypto')
+const ecdsa = require('./ecdsa')
+const randomBytes = require('randombytes')
+const typeforce = require('typeforce')
+const types = require('./types')
+const wif = require('wif')
 
-var NETWORKS = require('./networks')
-var BigInteger = require('bigi')
+const NETWORKS = require('./networks')
+const BigInteger = require('bigi')
 
-var ecurve = require('ecurve')
-var secp256k1 = ecdsa.__curve
+const ecurve = require('ecurve')
+const secp256k1 = ecdsa.__curve
 
 function ECPair (d, Q, options) {
   if (options) {
@@ -49,23 +49,23 @@ Object.defineProperty(ECPair.prototype, 'Q', {
 })
 
 ECPair.fromPublicKeyBuffer = function (buffer, network) {
-  var Q = ecurve.Point.decodeFrom(secp256k1, buffer)
+  const Q = ecurve.Point.decodeFrom(secp256k1, buffer)
 
   return new ECPair(null, Q, {
     compressed: Q.compressed,
-    network: network
+    network
   })
 }
 
 ECPair.fromWIF = function (string, network) {
-  var decoded = wif.decode(string)
-  var version = decoded.version
+  const decoded = wif.decode(string)
+  const version = decoded.version
 
   // list of networks?
   if (types.Array(network)) {
     network = network.filter(function (x) {
       return version === x.wif
-    }).pop()  // We should not use pop since it depends on the order of the networks for the same wif
+    }).pop() // We should not use pop since it depends on the order of the networks for the same wif
 
     if (!network) throw new Error('Unknown network version')
 
@@ -73,26 +73,26 @@ ECPair.fromWIF = function (string, network) {
   } else {
     network = network || NETWORKS.default
     console.log('Network WIF: ' + network.wif + ', Version: ' + version)
-    //if (version !== network.wif) throw new Error('Invalid network version')
+    // if (version !== network.wif) throw new Error('Invalid network version')
     if (version !== network.wif) console.log('Warning: current network version does not match wif key version')
   }
 
-  var d = BigInteger.fromBuffer(decoded.privateKey)
+  const d = BigInteger.fromBuffer(decoded.privateKey)
 
   return new ECPair(d, null, {
     compressed: decoded.compressed,
-    network: network
+    network
   })
 }
 
 ECPair.makeRandom = function (options) {
   options = options || {}
 
-  var rng = options.rng || randomBytes
+  const rng = options.rng || randomBytes
 
-  var d
+  let d
   do {
-    var buffer = rng(32)
+    const buffer = rng(32)
     typeforce(types.Buffer256bit, buffer)
 
     d = BigInteger.fromBuffer(buffer)
@@ -120,13 +120,13 @@ ECPair.prototype.getPublicKeyBuffer = function () {
 ECPair.prototype.getPrivateKeyBuffer = function () {
   if (!this.d) throw new Error('Missing private key')
 
-  var bigIntBuffer = this.d.toBuffer()
+  const bigIntBuffer = this.d.toBuffer()
   if (bigIntBuffer.length > 32) throw new Error('Private key size exceeds 32 bytes')
 
   if (bigIntBuffer.length === 32) {
     return bigIntBuffer
   }
-  var newBuffer = Buffer.alloc(32)
+  const newBuffer = Buffer.alloc(32)
   bigIntBuffer.copy(newBuffer, newBuffer.length - bigIntBuffer.length, 0, bigIntBuffer.length)
   return newBuffer
 }
