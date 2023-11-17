@@ -9,7 +9,7 @@ const networks = require('./networks')
 const typeforce = require('typeforce')
 const types = require('./types')
 const varuint = require('varuint-bitcoin')
-const blake2b = require('blake2b')
+const blake2b = require('@bitgo/blake2b')
 
 function varSliceSize (someScript) {
   const length = someScript.length
